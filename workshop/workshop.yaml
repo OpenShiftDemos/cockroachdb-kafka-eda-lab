@@ -1,9 +1,8 @@
 ---
-name: Bookbag Template
+name: Architecting event-driven applications with OpenShift, CockroachDB and Kafka
 modules:
   activate:
-    - overview
-    - exercise1
-    - exercise2
-    - exercise3
-    - review
+    - setup
+    - kafka
+    - changefeed
+    - edamicro

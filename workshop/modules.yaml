@@ -1,16 +1,14 @@
 ---
 modules:
-  overview:
-    name: Overview
+  setup:
+    name: Application and Database Setup
     exit_sign: Continue
-  exercise1:
-    name: Exercise 1
+  kafka:
+    name: Kafka
     exit_sign: Continue
-  exercise2:
-    name: Exercise 2
+  changefeed:
+    name: Configuring the Changefeed1
     exit_sign: Continue
-  exercise3:
-    name: Exercise 3
+  edamicro:
+    name: EDA Consumer Microservice
     exit_sign: Continue
-  review:
-    name: Review

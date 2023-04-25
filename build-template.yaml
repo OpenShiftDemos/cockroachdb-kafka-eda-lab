@@ -18,7 +18,7 @@ parameters:
     required: true
     value: quay.io/openshifthomeroom/workshop-dashboard:5.0.0
   - name: GIT_REPO
-    value: https://github.com/redhat-gpte-devopsautomation/bookbag-template.git
+    value: https://github.com/OpenShiftDemos/cockroachdb-kafka-eda-lab
 
 objects:
   - apiVersion: image.openshift.io/v1
@@ -37,13 +37,13 @@ objects:
           name: ${NAME}:latest
       source:
         git:
-          ref: master
+          ref: main
           uri: ${GIT_REPO}
         type: Git
       strategy:
-        sourceStrategy:
+        dockerStrategy:
           from:
             kind: DockerImage
             name: ${BUILDER_IMAGE}
-        type: Source
+        type: Docker
       triggers: []

@@ -16,7 +16,9 @@ RUN cd /opt/app-root/bin && \
     tar -xzvf ${COCKROACH_VERSION}.tgz && \
     mv ${COCKROACH_VERSION}/cockroach . && \
     mkdir -p /usr/local/lib/cockroach && \
-    mv ${COCKROACH_VERSION}/lib/* /usr/local/lib/cockroach/
+    mv ${COCKROACH_VERSION}/lib/* /usr/local/lib/cockroach/ && \
+    yum -y install https://github.com/tektoncd/cli/releases/download/v0.30.1/tektoncd-cli-0.30.1_Linux-64bit.rpm && \
+    yum clean all
 
 USER 1001
 

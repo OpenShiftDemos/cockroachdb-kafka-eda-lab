@@ -1,0 +1,98 @@
+. Login to the OpenShift console
++
+Console URL: <auto generate>
++
+Login id: <UserX>
++
+Password: openshift (same for all users)
+
+. Switch to Developer View
++
+* In the OpenShift console's left-side menu, select the _Developer_ perspective
+from the drop-down menu.
++
+image::images/choose-developer-perspective.png[]
++
+* Then, make sure to select the `userX-eda` from the drop-down menu labeled
+_Project_ at the top-left.
+
+## Fruit Shop Application
+. Next, you will deploy a pre-built container image for the Spring Boot "Fruit"
+application.
++
+* Select _+Add_ in the left-hand navigation and then click the _Container Images_
+tile.
++
+* Enter `quay.io/ecosystem-appeng/spring-postgresql-demo:v0.0.1` in the box that
+says _Image name from external registry_. Accept all of the other defaults and
+click the blue _Create_ button.
++
+* You will return to the _Topology_ view and see that the pod has a red ring
+around it:
++
+This is because the Spring application cannot find its database, so it crashes
+on start-up. OpenShift keeps trying to restart the pod endlessly, which is a
+good thing!
+
+## CockroachDB Cloud Hosted Database
+. Next, you will add a CockroachDB Cloud Hosted Database
++
+* On the OpenShift console's left-side menu, select _+Add_ and then click the _Cloud-Hosted
+Database_ tile. 
++
+* Select _CockroachDB Cloud_ tile and then click the blue _Add to Topology_ button.
++
+* In the next screen select _+ Create New Database Instance_ on the right-hand side.
+[WARNING]
+Make sure that you choose _+ Create New Database Instance_, otherwise you may
+end up using someone else's database. This OpenShift cluster is configure with a
+single database provider account for the CockroachDB Cloud, which is why you may
+see all of the other databases.
++
+* In the box that says _Cluster name_, enter `userX-db`.
+* Scroll to the bottom and click the blue _Create_ button.
+* Click the blue "View Database Instances" button.
+* Click the radio button for your database, `userX-db`.
+[WARNING]
+Make sure that you select your own database, and not a different user's database.
+* Click the blue _Add to Topology_ button.
+* Click the blue _Continue_ button.
+. Create a service binding between the Spring Boot Fruit Shop application and
+the database instance.
+* Hover your mouse over the center of the red pod ring. You will notice that a
+small arrow appears coming out from the ring after a moment.
+* Click and drag the arrow to the dotted-line box around the database.
+* Click the blue _Create_ button to accept the default service binding name.
+[NOTE]
+A service binding in OpenShift automatically causes environment variables to be
+set related to the service being bound. In your case, it is injecting
+environment variables and details for the database connection.
+* The pod ring should turn blue, indicating that the pod is now running (and no
+longer crashing)
+
+## Testing
+. Test the Fruit Shop application
+* Open Application UI by clicking the route opener (pictured)
+* Perform basic tasks like inserts/updates within the application UI. For
+  example, add 2 Strawberries.
+. Obtain credentials to connect to CockroachDB Serverless cluster from Service
+binding
+* On the Topology page click on the Service Binding arrow:
+* In the new right-hand panel, click on the link for the Secret:
+* From the Service Binding Secret page, click the _Reveal values_ link
+* Get the details for the following values: username, host, clusterID (see below) & password:
+
+Create connection string to connect to CockroachDB using CockroachDB Client
+You will need to replace a few parameters in the command below with the values obtained from the :
+cockroach sql --url "postgresql://<replace-with-username>@<replace-with-host>:26257/<replace-with-clusterid>.defaultdb?sslmode=verify-full"
+
+From Terminal window, connect to CockroachDB Serverless using the CockroachDB Client
+Use the completed connection string from the step listed above. Copy the connection string and paste it on your terminal window and press enter:
+
+You will be prompted for the password, enter the password and press Enter to be successfully logged in:
+
+Validate the data was stored in the Database using basic SQL commands:
+Once logged into the CockroachDB SQL shell, run the following commands to confirm data was stored in the ‘fruit’ table:
+First execute the following command: show tables;
+Confirm that the fruit table was created. Then execute the following command: select * from fruit limit 5;
+
