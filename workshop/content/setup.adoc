@@ -96,7 +96,7 @@ COCKROACH_DB_USER=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.use
 +
 [source,bash,role=execute]
 ----
-bash ~/scripts/test-service-binding.sh
+bash ~/assets/test-service-binding.sh
 ----
 
 * You will see output like the following:

@@ -1,0 +1,62 @@
+## Create the Kafka Topic
+Now that your basic application components are deployed, you will create a Kafka topic that will be used for streaming the events.
+
+1. You will create your Kafka topic using the `oc` CLI. The following YAML has been staged for you:
++
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: userX-table-changes
+  labels:
+    strimzi.io/cluster: crdb-cluster
+  namespace: userX-test
+spec:
+  config:
+    retention.ms: 604800000
+    segment.bytes: 1073741824
+  partitions: 1
+  replicas: 3
+  topicName: userX-table-changes
+----
+* Execute the following command which will substitute your correct username into
+the YAML before passing it to `oc`:
++
+[source,yaml,role=execute]
+----
+sed 's/userX/{username}/' ~/assets/kafkatopic.yaml | oc create -f -
+----
+
+## Test the Kafka Topic
+There are two small Python applications that you will use to test the Kafka
+topic.
+
+. Deploy the Producer application
++
+* Create the Kafka Producer application by clicking _+ Add_ in the left-hand navigation
+* Click the somethingsomething
+* Imagey-thingy
+* Accept the defaults and then click the blue _Create_ button. 
+. Deploy the Consumer application
+* Create the Kafka Consumer application by clicking _+ Add_ in the left-hand navigation
+* Click the somethingsomething
+* Imagey-thingy
+* Accept the defaults and then click the blue _Create_ button. 
+. Test the Producer application
+* Click the _Topology_ button in the left-hand navigation
+* Click on the route for the producer application
++
+This will open a new browser window/tab
+* Go back to the OpenShift console and click on the Consumer pod
+* Click on the _Log_ tab in the pod's details window
+* Note that the Consumer's log indicates that your visit to the Producer
+produced a message.
+* You can switch between the Producer application's tab, refreshing the browser, and the Consumer pod's logs to watch the messages.
+. Delete the Producer application
+* The producer application is no longer needed, so click _Topology_ on the left-hand navigation
+* Then, click on the _D_ for the Producer's deployment
+* Delete
+
+You will leave the Consumer application running as it will be used later for
+debugging.
