@@ -80,19 +80,35 @@ binding
 * On the Topology page click on the Service Binding arrow:
 * In the new right-hand panel, click on the link for the Secret:
 * From the Service Binding Secret page, click the _Reveal values_ link
-* Get the details for the following values: username, host, clusterID (see below) & password:
+* Observe the values for various connection string parameters, but you will use
+a little bash scriptlet to do the hard work for you.
+* The `cockroach` CLI is embedded in the terminal. The following bash script will use `jq` to extract details from the secret, and then build the connection string:
++
+[source,bash]
+----
+#!/bin/bash
+COCKROACH_DB_SECRET=`oc get servicebinding -o json | jq -cr .items[0].status.secret`
+COCKROACH_DB_HOST=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.host | base64 -d`
+COCKROACH_DB_USER=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.username | base64 -d`
+----
 
-Create connection string to connect to CockroachDB using CockroachDB Client
-You will need to replace a few parameters in the command below with the values obtained from the :
-cockroach sql --url "postgresql://<replace-with-username>@<replace-with-host>:26257/<replace-with-clusterid>.defaultdb?sslmode=verify-full"
+* Execute the scriptlet using the following command, and note that it prints out the password you will need to type or copy/paste into the CLI:
++
+[source,bash,role=execute]
+----
+bash ~/scripts/test-service-binding.sh
+----
 
-From Terminal window, connect to CockroachDB Serverless using the CockroachDB Client
-Use the completed connection string from the step listed above. Copy the connection string and paste it on your terminal window and press enter:
+* You will see output like the following:
++
+[source,bash]
+----
+blahblah
+----
 
-You will be prompted for the password, enter the password and press Enter to be successfully logged in:
-
-Validate the data was stored in the Database using basic SQL commands:
-Once logged into the CockroachDB SQL shell, run the following commands to confirm data was stored in the ‘fruit’ table:
-First execute the following command: show tables;
-Confirm that the fruit table was created. Then execute the following command: select * from fruit limit 5;
-
+* Validate the data was stored in the Database using basic SQL commands:
++
+[source,sql]
+----
+select * from fruit limit 5;
+----
