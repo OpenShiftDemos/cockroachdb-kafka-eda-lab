@@ -1,19 +1,42 @@
-. Login to the OpenShift console
-+
-Console URL: <auto generate>
-+
-Login id: <UserX>
-+
-Password: openshift (same for all users)
+## OpenShift Logins
+In the terminal at the right, you will execute many of the command-line
+instructions required for this lab. However, you must first log-in to OpenShift
+as the correct user.
 
-. Switch to Developer View
+. Login to OpenShift on the command line
++
+[source,bash,role=execute]
+----
+oc login -u %user% -p %password%
+----
++
+[NOTE]
+The super security-conscious will recognize that entering passwords on the
+command line as part of command execution is a bad practice.
+
+. Switch to your project
++
+[source,bash,role=execute]
+----
+oc project %user%-eda
+----
+
+. Login to the OpenShift web console
++
+Console URL: %console_url%
++
+Login id: %user%
++
+Password: %password%
+
+. Switch to the Developer perspective
 +
 * In the OpenShift console's left-side menu, select the _Developer_ perspective
-from the drop-down menu.
+from the drop-down menu if it is not already selected.
 +
 image::images/choose-developer-perspective.png[]
 +
-* Then, make sure to select the `userX-eda` from the drop-down menu labeled
+* Then, make sure to select the `%user%-eda` from the drop-down menu labeled
 _Project_ at the top-left.
 
 ## Fruit Shop Application
@@ -24,11 +47,17 @@ application.
 tile.
 +
 * Enter `quay.io/ecosystem-appeng/spring-postgresql-demo:v0.0.1` in the box that
-says _Image name from external registry_. Accept all of the other defaults and
-click the blue _Create_ button.
+says _Image name from external registry_.
 +
-* You will return to the _Topology_ view and see that the pod has a red ring
-around it:
+[source,role=copy]
+----
+quay.io/ecosystem-appeng/spring-postgresql-demo:v0.0.1
+----
++
+*  Accept all of the other defaults and click the blue _Create_ button at the
+bottom.
+* You will return to the _Topology_ view and see that the pod ends up with a red
+ring around it:
 +
 This is because the Spring application cannot find its database, so it crashes
 on start-up. OpenShift keeps trying to restart the pod endlessly, which is a
@@ -45,14 +74,14 @@ Database_ tile.
 * In the next screen select _+ Create New Database Instance_ on the right-hand side.
 [WARNING]
 Make sure that you choose _+ Create New Database Instance_, otherwise you may
-end up using someone else's database. This OpenShift cluster is configure with a
-single database provider account for the CockroachDB Cloud, which is why you may
-see all of the other databases.
+end up using someone else's database. This OpenShift cluster is configured  with
+a single database provider account for the CockroachDB Cloud, which is why you
+may see all of the other databases.
 +
-* In the box that says _Cluster name_, enter `userX-db`.
+* In the box that says _Cluster name_, enter `%user%-db`.
 * Scroll to the bottom and click the blue _Create_ button.
 * Click the blue "View Database Instances" button.
-* Click the radio button for your database, `userX-db`.
+* Click the radio button for your database, `%user%-db`.
 [WARNING]
 Make sure that you select your own database, and not a different user's database.
 * Click the blue _Add to Topology_ button.
@@ -64,11 +93,33 @@ small arrow appears coming out from the ring after a moment.
 * Click and drag the arrow to the dotted-line box around the database.
 * Click the blue _Create_ button to accept the default service binding name.
 [NOTE]
-A service binding in OpenShift automatically causes environment variables to be
-set related to the service being bound. In your case, it is injecting
-environment variables and details for the database connection.
-* The pod ring should turn blue, indicating that the pod is now running (and no
-longer crashing)
+====
+A service binding in OpenShift automatically causes a Kubernetes `Secret` to be
+injected into the pod. In your case, it is injecting a secret with the details
+of the database connection. If you want to see the low-level implementation of
+this behavior:
+
+* In the _Topology_ view, click on the pod ring for the Spring app
+* In the right-hand tab, click on the pod, which will have a name like `spring-postgresql-demo-664b79b5d6-hv8jx`
+* In the pod details screen, click on the _YAML_ tab
+* Scroll down to the `volumeMounts` section, which will look something like:
++
+[source,yaml]
+----
+volumeMounts:
+  - name: spring-postgresql-demo-d-user1-db-a8375c8343-dbsc
+    mountPath: /bindings/spring-postgresql-demo-d-user1-db-a8375c8343-dbsc
+  - name: kube-api-access-p4pkx
+    readOnly: true
+    mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+----
+
+The Spring application knows how to extract the relevant connection details from
+this mounted secret.
+====
+
+After creating the service binding, the pod ring should turn blue, indicating
+that the pod is now running (and no longer crashing)
 
 ## Testing
 . Test the Fruit Shop application
@@ -90,6 +141,11 @@ a little bash scriptlet to do the hard work for you.
 COCKROACH_DB_SECRET=`oc get servicebinding -o json | jq -cr .items[0].status.secret`
 COCKROACH_DB_HOST=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.host | base64 -d`
 COCKROACH_DB_USER=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.username | base64 -d`
+COCKROACH_DB=` oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.options | base64 -d | cut -d= -f2`
+COCKROACH_DB_PASSWORD=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.password | base64 -d`
+
+echo "Use this password: $COCKROACH_DB_PASSWORD"
+cockroach sql --url "postgresql://$COCKROACH_DB_USER@$COCKROACH_DB_HOST:26257/$COCKROACH_DB.defaultdb?sslmode=verify-full"
 ----
 
 * Execute the scriptlet using the following command, and note that it prints out the password you will need to type or copy/paste into the CLI:
@@ -108,7 +164,14 @@ blahblah
 
 * Validate the data was stored in the Database using basic SQL commands:
 +
-[source,sql]
+[source,sql,role=execute]
 ----
 select * from fruit limit 5;
+----
+
+* Exit the CockroachDB CLI:
++
+[source,role=execute]
+----
+quit
 ----
