@@ -25,7 +25,7 @@ the YAML before passing it to `oc`:
 +
 [source,yaml,role=execute]
 ----
-sed 's/userX/{username}/' ~/assets/kafkatopic.yaml | oc create -f -
+sed 's/userX/%user%/' ~/assets/kafkatopic.yaml | oc create -f -
 ----
 
 ## Test the Kafka Topic
@@ -33,30 +33,74 @@ There are two small Python applications that you will use to test the Kafka
 topic.
 
 . Deploy the Producer application
+* Create the Kafka Producer application by clicking _+ Add_ in the left-hand
+navigation
+* Click the _Container images_ tile
+* Use the following image name in the _Image from external registry_ box:
 +
-* Create the Kafka Producer application by clicking _+ Add_ in the left-hand navigation
-* Click the somethingsomething
-* Imagey-thingy
-* Accept the defaults and then click the blue _Create_ button. 
+[source,role=copy]
+----
+quay.io/openshiftdemos/python-kafka-producer:latest
+----
+* Scroll down to the text that says _Click on the names to access advanced
+options_ and click the word _Deployment_
+* Add an environment variable called `TOPIC_NAME` with the value
+`%user%-table-changes`
+* Click the blue _Create_ button. 
+
+. Initialize the Topic
+* Click on the Producer application's route, which will open a new browser tab.
+You will see something like the following:
++
+[source]
+----
+{"kafka_produce":"posted messages"}
+----
+
+Don't close this window, but go back to the OpenShift web console.
+
 . Deploy the Consumer application
-* Create the Kafka Consumer application by clicking _+ Add_ in the left-hand navigation
-* Click the somethingsomething
-* Imagey-thingy
-* Accept the defaults and then click the blue _Create_ button. 
-. Test the Producer application
-* Click the _Topology_ button in the left-hand navigation
-* Click on the route for the producer application
 +
-This will open a new browser window/tab
-* Go back to the OpenShift console and click on the Consumer pod
-* Click on the _Log_ tab in the pod's details window
-* Note that the Consumer's log indicates that your visit to the Producer
-produced a message.
-* You can switch between the Producer application's tab, refreshing the browser, and the Consumer pod's logs to watch the messages.
+* Create the Kafka Consumer application by clicking _+ Add_ in the left-hand
+navigation
+* Click the _Container images_ tile
+* Use the following image name in the _Image from external registry_ box:
++
+[source,role=copy]
+----
+quay.io/openshiftdemos/python-kafka-consumer:latest
+----
+* Scroll down to the text that says _Click on the names to access advanced
+options_ and click the word _Deployment_
+* Add an environment variable called `TOPIC_NAME` with the value
+`%user%-table-changes`
+* Click the blue _Create_ button. 
+
+
+. Test the Producer application
+* Click on the Consumer pod in the _Topology_ view.
+* In the right-hand navigation, click into the pod in the Pods list. It will
+have a name like `python-kafka-consumer-696d6fbfbb-r9kk6`
+* Click on the _Logs_ tab in the pod's details window
+* Note that the Consumer's log indicates that your earlier visit to the Producer
+produced messages.
+* You can switch between the Producer application's tab, refreshing the browser,
+and the Consumer pod's logs to watch the messages.
+
 . Delete the Producer application
-* The producer application is no longer needed, so click _Topology_ on the left-hand navigation
-* Then, click on the _D_ for the Producer's deployment
-* Delete
+* The producer application is no longer needed, so you can delete its assets:
++
+[source,bash,role=execute]
+----
+oc delete -l app=python-kafka-producer deployment,svc,route,is
+----
+
+[NOTE]
+There is a feature in the OpenShift console when using the _+ Add_ workflow to
+use _application grouping_ which would have made deleting the components easier.
+If you click the three dots next to one of the deployment names in the topology,
+you will see an option called _Edit application grouping_. Feel free to try
+moving the Kafka consumer to its own group.
 
 You will leave the Consumer application running as it will be used later for
 debugging.

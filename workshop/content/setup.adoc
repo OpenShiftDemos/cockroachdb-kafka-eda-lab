@@ -157,9 +157,16 @@ bash ~/assets/test-service-binding.sh
 
 * You will see output like the following:
 +
-[source,bash]
+[source]
 ----
-blahblah
+Use this password: AmR6x~3C(Cd/
+#
+# Welcome to the CockroachDB SQL shell.
+# All statements must be terminated by a semicolon.
+# To exit, type: \q.
+#
+Connecting to server "free-tier14.aws-us-east-1.cockroachlabs.cloud:26257" as user "user1_eda.user1_db_a8375c8343".
+Enter password:
 ----
 
 * Validate the data was stored in the Database using basic SQL commands:
