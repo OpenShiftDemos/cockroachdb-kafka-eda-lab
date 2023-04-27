@@ -44,8 +44,20 @@ quay.io/openshiftdemos/python-kafka-producer:latest
 ----
 * Scroll down to the text that says _Click on the names to access advanced
 options_ and click the word _Deployment_
-* Add an environment variable called `TOPIC_NAME` with the value
-`%user%-table-changes`
+* Add an environment variable called:
++
+[source,role=copy]
+----
+TOPIC_NAME
+----
++
+with the value:
++
+[source,role=copy]
+----
+%user%-table-changes
+----
+
 * Click the blue _Create_ button. 
 
 . Initialize the Topic
@@ -92,7 +104,7 @@ and the Consumer pod's logs to watch the messages.
 +
 [source,bash,role=execute]
 ----
-oc delete -l app=python-kafka-producer deployment,svc,route,is
+oc delete all -l app=python-kafka-producer
 ----
 
 [NOTE]
