@@ -81,8 +81,28 @@ shown.
 bash ~/assets/cockroach-changefeed.sh
 ----
 
+If successful, you should see something like:
+
+[source]
+----
+Use this password: i33$ylgU7azN
+Connecting to server "free-tier14.aws-us-east-1.cockroachlabs.cloud:26257" as user "user1_eda.user1_db_a8375c8343".
+Enter password:
+        job_id
+----------------------
+  860339889937547265
+(1 row)
+
+
+Time: 127ms
+
+NOTICE: changefeed will emit to topic user1-table-changes
+----
+
 ## Verify the CockroachDB changefeed
-Reconnect to the database using the service binding test script:
+Even though the above output is pretty clear about whether or not is successful,
+you can additionally verify the changefeed with an SQL command. Reconnect to the
+database using the service binding test script:
 
 [source,bash,role=execute]
 ----
@@ -97,7 +117,21 @@ configuration:
 show changefeed jobs;
 ----
 
-## Test the CockroachDB changefeed via SQL
+Somewhere buried in that output you should see:
+
+[source]
+----
+CREATE CHANGEFEED FOR TABLE
+----
+
+Exit the CockroachDB client:
+
+[source,sql,role=execute]
+----
+quit
+----
+
+## Test the CockroachDB changefeed with the Fruit app
 Make sure you have the Python consumer application's logs showing:
 
 . In the OpenShift web console, ensure you are using the _Developer_ perspective
@@ -108,41 +142,8 @@ Make sure you have the Python consumer application's logs showing:
 `python-kafka-consumer-696d6fbfbb-cfxw8`
 . Click the _Logs_ tab
 
-Now, in the terminal, check which fruits are available in your database:
-
-[source,sql,role=execute]
-----
-select * from fruit limit 5;
-----
-
-You will see output like the following:
-
-[source]
-----
-                   id                  |   name    | quantity | description
----------------------------------------+-----------+----------+--------------
-  51661376-0a07-449b-a3bd-9db79cd4ead4 | Apple     |        0 | NULL
-  69f6cd81-59fc-493b-8ebf-1b9f150ecead | Blueberry |        0 | NULL
-  d37f4fae-b572-47b3-93e0-17daf798f9d5 | Banana    |        0 | NULL
-----
-
-Next, run an `UPDATE SQL` command on your outbox table. Make sure you use a row
-ID from _your_ database. _DO NOT_ copy and paste one of the IDs from the example
-above.
-
-[source,sql,role=copy]
-----
-UPDATE fruit-outbox SET quantity = '50' where id = '<paste-any-rowid>';
-----
-
-If you look now at the Python consumer application's log window, you should see
-an update was sent by CockroachDB to the Kafka broker, which was then consumed
-and displayed in the application log.
-
-## Test the changefeed with the Fruit application
-Now that you have verified the changefeed via direct SQL commands, it's time to
-do the full end-to-end test. You will probably want to open a new window into
-the OpenShift web console so that you can keep the logs in view.
+You will want to open another browser window into the OpenShift console to find
+the Fruit application's route.
 
 Alternatively, you could watch the Python consumer application's logs via the
 OpenShift command line:
@@ -161,4 +162,10 @@ Return to the Fruit application by clicking its route button in the _Topology_
 view of your project:
 
 Manipulate some fruit, and then watch the Python consumer application. You
-should see that changes are flowing through to it via Kafka!
+should see that changes are flowing through to it via Kafka! If you created
+_Strawberries_ with a quantity of _6_, you might see:
+
+[source]
+----
+Received message: {"after": {"description": null, "id": "6e154890-764e-449b-b6d0-f57216c908d9", "name": "Strawberries", "quantity": "6"}}
+----
