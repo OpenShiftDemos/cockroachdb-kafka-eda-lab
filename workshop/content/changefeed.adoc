@@ -72,34 +72,93 @@ bash script that will save you the trouble of lots of copying and pasting:
 cat ~/assets/cockroach-changefeed.sh
 ----
 
-When you run the above scriptlet, the output will be the SQL command to paste
-into the CockroachDB client.
+When you run the above scriptlet, the route and certificate details will be
+fetched and then passed to the CockroachDB CLI. Just copy and paste the password
+shown.
 
 [source,bash,role=execute]
 ----
 bash ~/assets/cockroach-changefeed.sh
 ----
 
-Run your handy service binding test script from earlier to re-connect with your
-DB instance:
+## Verify the CockroachDB changefeed
+Reconnect to the database using the service binding test script:
 
 [source,bash,role=execute]
 ----
 bash ~/assets/test-service-binding.sh
 ----
 
-Copy/paste the password to log-in, and then copy/paste the changefeed command to
-set up the changefeed.
+Once connected, the following SQL will tell you the status of any changefeed
+configuration:
 
+[source,sql,role=execute]
+----
+show changefeed jobs;
+----
 
-You can further validate that changefeed has been successfully created by executing the following command: show changefeed jobs;
-The output of the above command will provide details on the running status of the changefeed job.
-Validate that the changefeed is setup
-Go to the Kafka consumer window. If the Kafka consumer window was shut down, restart the consumer following the steps in the previous module.
-Run a UPDATE SQL command on your outbox table:
-Execute the following command on the outbox table: select * from fruit-outbox limit 5;
-Update a record in the outbox table using the following command: UPDATE fruit-outbox SET quantity = '50' where id = '<paste-any-rowid>';
-Row in outbox table will be updated
-Validate that the consumer has consumed the updates to the outbox table
+## Test the CockroachDB changefeed via SQL
+Make sure you have the Python consumer application's logs showing:
 
-Using the SpringBoot application UI do add/delete operations on the Fruits table and watch the kafka messages on the python consumer application.
+. In the OpenShift web console, ensure you are using the _Developer_ perspective
+. Make sure that you are in the _Topology_ view
+. Select your `%user%-eda` project from the dropdown at the top
+. Click the Python consumer application pod
+. Click the pod name in the right hand navigation, which looks like
+`python-kafka-consumer-696d6fbfbb-cfxw8`
+. Click the _Logs_ tab
+
+Now, in the terminal, check which fruits are available in your database:
+
+[source,sql,role=execute]
+----
+select * from fruit limit 5;
+----
+
+You will see output like the following:
+
+[source]
+----
+                   id                  |   name    | quantity | description
+---------------------------------------+-----------+----------+--------------
+  51661376-0a07-449b-a3bd-9db79cd4ead4 | Apple     |        0 | NULL
+  69f6cd81-59fc-493b-8ebf-1b9f150ecead | Blueberry |        0 | NULL
+  d37f4fae-b572-47b3-93e0-17daf798f9d5 | Banana    |        0 | NULL
+----
+
+Next, run an `UPDATE SQL` command on your outbox table. Make sure you use a row
+ID from _your_ database. _DO NOT_ copy and paste one of the IDs from the example
+above.
+
+[source,sql,role=copy]
+----
+UPDATE fruit-outbox SET quantity = '50' where id = '<paste-any-rowid>';
+----
+
+If you look now at the Python consumer application's log window, you should see
+an update was sent by CockroachDB to the Kafka broker, which was then consumed
+and displayed in the application log.
+
+## Test the changefeed with the Fruit application
+Now that you have verified the changefeed via direct SQL commands, it's time to
+do the full end-to-end test. You will probably want to open a new window into
+the OpenShift web console so that you can keep the logs in view.
+
+Alternatively, you could watch the Python consumer application's logs via the
+OpenShift command line:
+
+[source,bash,role=execute]
+----
+oc logs -f `oc get pod -l app=python-kafka-consumer -o jsonpath='{.items[0].metadata.name}'`
+----
+
+[NOTE]
+You could have simply done an `oc get pod` to determine the name of the
+consumer's pod, and then done `oc logs -f <podname>` - but the scriptlet is more
+convenient!
+
+Return to the Fruit application by clicking its route button in the _Topology_
+view of your project:
+
+Manipulate some fruit, and then watch the Python consumer application. You
+should see that changes are flowing through to it via Kafka!
