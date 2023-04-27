@@ -1,0 +1,105 @@
+## CockroachDB and Kafka
+CockroachDB is capable of acting as a Kafka producer that publishes messages to
+Kafka topics in relation to database events. As this lab uses the CockroachDB
+Cloud, you will need to configure the Kafka (running in the OpenShift cluster)
+to allow external, authenticated communication.
+
+## Configuring Kafka for External Communication
+When the lab environment was set up, the Kafka cluster was exposed externally
+via an OpenShift Route. The route was secured using TLS encryption and
+communicates as HTTPS over port 443 (the default).
+
+To get the route for the Kafka bootstrap cluster, you have two options.
+
+### Option 1: OpenShift GUI
+. Click the _Project_ dropdown at the top of the _Topology_ area and choose the `crdb-kafka` project
+. Click _Project_ in the left-hand navigation
+. Click _Routes_ in the _Inventory_ area
+. Find the _Location_ for the route called `crdb-cluster-kafka-external-bootstrap`
+
+### Option 2: OpenShift CLI
+The following command will get the route information:
+
+[source,bash,role=execute]
+----
+oc get route crdb-cluster-kafka-external-bootstrap -n crdb-kafka
+----
+
+Because the URL is so long, the line wrapping makes things look a little messy.
+The important details are the following:
+
+* the hostname, which ends in .com in our case
+* the termination type, which is _passthrough_, meaning that the HAProxy load
+balancer handling the external connections to OpenShift will pass the TLS
+connection through to the endpoint (Kafka, in this case) without re-encrypting
+or de-encrypting
+
+## Obtaining the TLS certificate
+CockroachDB, like most TLS-enabled applications, needs the certificate in order
+to properly communicate. 
+
+While you could also find the certificate by digging in the OpenShift web
+console, it's fairly quick to do it via the CLI:
+
+[source,bash,role=execute]
+----
+oc describe kafka crdb-cluster -n crdb-kafka
+----
+
+You will see something like:
+
+----
+Name:         crdb-cluster
+Namespace:    crdb-kafka
+Labels:       <none>
+Annotations:  <none>
+API Version:  kafka.strimzi.io/v1beta2
+...
+...
+    Certificates:
+      -----BEGIN CERTIFICATE-----
+MIIFLTCCAxWgAwIBAgIUcFEfRknbqi5qbQnelpfNjKEQV4cwDQYJKoZIhvcNAQEN
+...
+----
+
+## Set up the CockroachDB changefeed
+Setting up the changefeed for your CockroachDB Cloud instance to talk to the
+Kafka broker is as easy as an SQL command. Fortunately, we have provided a small
+bash script that will save you the trouble of lots of copying and pasting:
+
+[source,bash,role=execute]
+----
+cat ~/assets/cockroach-changefeed.sh
+----
+
+When you run the above scriptlet, the output will be the SQL command to paste
+into the CockroachDB client.
+
+[source,bash,role=execute]
+----
+bash ~/assets/cockroach-changefeed.sh
+----
+
+Run your handy service binding test script from earlier to re-connect with your
+DB instance:
+
+[source,bash,role=execute]
+----
+bash ~/assets/test-service-binding.sh
+----
+
+Copy/paste the password to log-in, and then copy/paste the changefeed command to
+set up the changefeed.
+
+
+You can further validate that changefeed has been successfully created by executing the following command: show changefeed jobs;
+The output of the above command will provide details on the running status of the changefeed job.
+Validate that the changefeed is setup
+Go to the Kafka consumer window. If the Kafka consumer window was shut down, restart the consumer following the steps in the previous module.
+Run a UPDATE SQL command on your outbox table:
+Execute the following command on the outbox table: select * from fruit-outbox limit 5;
+Update a record in the outbox table using the following command: UPDATE fruit-outbox SET quantity = '50' where id = '<paste-any-rowid>';
+Row in outbox table will be updated
+Validate that the consumer has consumed the updates to the outbox table
+
+Using the SpringBoot application UI do add/delete operations on the Fruits table and watch the kafka messages on the python consumer application.

@@ -46,12 +46,12 @@ application.
 * Select _+Add_ in the left-hand navigation and then click the _Container Images_
 tile.
 +
-* Enter `quay.io/ecosystem-appeng/spring-postgresql-demo:v0.0.1` in the box that
-says _Image name from external registry_.
+* Enter the following image name in the box that says _Image name from external
+registry_.
 +
 [source,role=copy]
 ----
-quay.io/ecosystem-appeng/spring-postgresql-demo:v0.0.1
+quay.io/openshiftdemos/cockroach-kafka-eda-fruit-node:latest
 ----
 +
 *  Accept all of the other defaults and click the blue _Create_ button at the
@@ -135,17 +135,9 @@ binding
 a little bash scriptlet to do the hard work for you.
 * The `cockroach` CLI is embedded in the terminal. The following bash script will use `jq` to extract details from the secret, and then build the connection string:
 +
-[source,bash]
+[source,bash,role=execute]
 ----
-#!/bin/bash
-COCKROACH_DB_SECRET=`oc get servicebinding -o json | jq -cr .items[0].status.secret`
-COCKROACH_DB_HOST=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.host | base64 -d`
-COCKROACH_DB_USER=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.username | base64 -d`
-COCKROACH_DB=` oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.options | base64 -d | cut -d= -f2`
-COCKROACH_DB_PASSWORD=`oc get secret $COCKROACH_DB_SECRET -o json | jq -cr .data.password | base64 -d`
-
-echo "Use this password: $COCKROACH_DB_PASSWORD"
-cockroach sql --url "postgresql://$COCKROACH_DB_USER@$COCKROACH_DB_HOST:26257/$COCKROACH_DB.defaultdb?sslmode=verify-full"
+cat ~/assets/test-service-binding.sh
 ----
 
 * Execute the scriptlet using the following command, and note that it prints out the password you will need to type or copy/paste into the CLI:
