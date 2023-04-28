@@ -53,6 +53,10 @@ task.tekton.dev/create-cm created
 pipeline.tekton.dev/build-and-deploy-ms created
 ----
 
+[NOTE]
+If you get an "already exists" error, it might mean you just executed the create
+command twice. No worries!
+
 . Now, go back to the OpenShift web console, making sure you are using the
 `%user%-eda` project
 . In the left-hand navigation, choose the _Administrator_ perspective at the
@@ -85,7 +89,7 @@ tkn pipeline start build-and-deploy-ms \
 -w name=shared-workspace,volumeClaimTemplateFile=pipelines/pipelinepvc.yaml \
 -p deployment-name-p=eda-producer-ms-ep \
 -p deployment-name-c=eda-consumer-ms-ep \
--p git-url=%gitea_console%url/%user%/cockroach-kafka-eda.git \
+-p git-url=%gitea_console_url%/%user%/cockroach-kafka-eda.git \
 -p IMAGE-P=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-producer \
 -p IMAGE-C=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-consumer \
 -p KAFKA_BROKER='crdb-cluster-kafka-bootstrap.crdb-kafka.svc.cluster.local:9092' \
@@ -94,3 +98,163 @@ tkn pipeline start build-and-deploy-ms \
 -p KAFKA_CLIENT_ID=%user%-clientid \
 --use-param-defaults
 ----
+
+. In the OpenShift web console, return to the _Pipelines_ menu
+. Click the `build-and-deploy-ms` pipeline
+. Click the _PipelineRuns_ tab
+. Click on the pipeline run
+
+You can now watch the pipeline do its thing. As each task completes, it will get
+a green checkmark. If you click the _Logs_ tab, you can observe the log output
+of each of the tasks.
+
+While you're waiting for the pipeline run to finish, here's an explanation of
+the `tkn` command above:
+
+. Start the `build-and-deploy-ms` pipeline
+. Use some shared storage, name it `shared-workspace`, and use a Kuberentes volume claim based on the YAML to determine the size and other characteristics of the storage
+. The git URL for the source code
+. The names of the producer and consumer resources
+. The output destination for the built images in the OpenShift container image registry
+. Some parameters for the apps to talk to Kafka
+
+The entire pipeline run may take six or seven minutes, so, if you're a fast
+reader, now would be a great time to relax your eyes, stand up and stretch, or
+play with your phone. We'll wait.
+
+## Expose the deployed applications
+Routes (and Kubernetes Ingresses) make applications available outside the
+cluster. Go ahead and execute the following commands to expose the applications
+you built and deployed with the pipeline:
+
+[source,bash,role=execute]
+----
+oc create route edge --service=eda-consumer-ms-ep-svc -n %user%-eda
+oc create route edge --service=eda-producer-ms-ep-svc -n %user%-eda
+----
+
+You will see output like:
+
+[source]
+----
+route.route.openshift.io/eda-consumer-ms-ep-svc created
+route.route.openshift.io/eda-producer-ms-ep-svc created
+----
+
+The `--edge` flag tells the command line tool to create a route that uses TLS
+edge termination. This means that TLS encryption stops at the OpenShift router
+(HAProxy) and is then un-encrypted between the router and the pod(s).
+
+The following command will give you more details about one of the routes you just created:
+
+[source,bash,role=execute]
+----
+oc describe route eda-consumer-ms-ep-svc
+----
+
+You will see output like:
+
+[source]
+----
+Name:                   eda-consumer-ms-ep-svc
+Namespace:              user1-eda
+Created:                2 minutes ago
+Labels:                 app=eda-consumer-ms-ep
+Annotations:            openshift.io/host.generated=true
+Requested Host:         eda-consumer-ms-ep-svc-user1-eda.apps.cluster-62k9w.62k9w.sandbox2634.opentlc.com
+                          exposed on router default (host router-default.apps.cluster-62k9w.62k9w.sandbox2634.opentlc.com) 2 minutes ago
+Path:                   <none>
+TLS Termination:        edge
+Insecure Policy:        <none>
+Endpoint Port:          <all endpoint ports>
+
+Service:        eda-consumer-ms-ep-svc
+Weight:         100 (100%)
+Endpoints:      10.129.2.46:3000
+----
+
+## Test the deployed producer
+To test the producer, you will want to look at the logs. You can either do this
+by visiting the OpenShift web console, or using the CLI. The lab guide will show
+you the CLI version. 
+
+In the web console's _Topology_ view, the producer application is called
+`eda-producer-ms-ep`. Do you remember how to find the logs for its pod? If not,
+look at the previous lab exercises.
+
+Execute the following curl to hit the producer application:
+
+[source,bash,role=execute]
+----
+curl https://$(oc get route eda-producer-ms-ep-svc -o jsonpath='{.spec.host}')/produce
+----
+
+You will see output like:
+
+[source]
+----
+{"message": "Requested to produce sample messages on user1-topic topic" }
+----
+
+Now, check the producer logs:
+
+[source,bash,role=execute]
+----
+oc logs $(oc get pod -l app=eda-producer-ms-ep -o name)
+----
+
+You should see a bunch of references to the following:
+
+[source]
+----
+produced to the topic user1-topic
+----
+
+## View the Consumer application
+You can get to the routes for the various application components from the
+_Topology_ view, or you can use the following command to get the URL:
+
+[source,bash,role=execute]
+----
+oc get route eda-consumer-ms-ep-svc
+----
+
+You can copy/paste the hostname, and don't forget the HTTPS! Or you can use the following bash-fu:
+
+[source,bash,role=execute]
+----
+echo "https://$(oc get route eda-consumer-ms-ep-svc -o jsonpath='{.spec.host}')"
+----
+
+That's a lot of pears.
+
+## Bonus Round! It's actually broken!
+If you open the browser console, you'll see that the websocket connection that
+the consumer application is making is failing. That's because the source code
+has a hard-coded URL and doesn't use any kind of environment variable or other
+parameter.
+
+Take a look at the source code for the consumer webpage:
+
+[source,bash,role=execute]
+----
+cd ~/cockroach-kafka-eda
+cat consumer/test.html | grep webSocket
+----
+
+It should be obvious what's wrong:
+
+[source]
+----
+    //webSocket = new WebSocket("ws://localhost:3000/foo");
+    webSocket = new WebSocket("wss://replacemewithconsumerurl/foo");
+    //   webSocket.addEventListener("message", (event) => {
+    webSocket.onmessage = function (message) {
+----
+
+Now, ideally you would be using a dynamic application where the server would
+interpret its environment variables and would determine the endpoint for the
+websocket connection in real time before serving the page to the client.
+
+However, this is a simple single-page HTML "application" so you'll have to
+hard-code the websocket endpoint URL in the HTML file.
