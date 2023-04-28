@@ -1,0 +1,96 @@
+## Accesing the sample application in Gitea
+There is a Gitea application, which is an open-source Github-like solution,
+running inside the cluster. You can access it at the following URL:
+
+[source,role=copy]
+----
+%gitea_console_url%
+----
+
+Your Gitea username is:
+
+[source,role=copy]
+----
+%gitea_user%
+----
+
+And the password is:
+
+[source,role=copy]
+----
+%gitea_password%
+----
+
+Sign in to Gitea clicking the link at the upper-right.
+
+When you sign in to Gitea, you will see that you already have a repository
+staged for you, called `%user%/cockroach-kafka-eda`. Click into it now.
+
+In preparation to do some light coding and process some Kubernetes/OpenShift manifests, it will be necessary to clone this repository:
+
+[source,bash,role=execute]
+----
+cd ~;\
+git clone %gitea_console_url%/%user%/cockroach-kafka-eda;\
+cd ~/cockroach-kafka-eda
+oc project %user%-eda
+----
+
+## OpenShift Pipelines and Pipeline resources
+OpenShift includes a CI/CD solution, OpenShift Pipelines, that is based on the upstream Tekton project. The repository you cloned includes some Pipeline manifests for building your event-driven application source. Please create those resources now:
+
+[source,bash,role=execute]
+----
+oc create -f pipelines/tasks.yaml -f pipelines/pipeline.yaml
+----
+
+You will see output like the following:
+[source]
+----
+task.tekton.dev/apply-manifests created
+task.tekton.dev/update-deployment created
+task.tekton.dev/create-cm created
+pipeline.tekton.dev/build-and-deploy-ms created
+----
+
+. Now, go back to the OpenShift web console, making sure you are using the
+`%user%-eda` project
+. In the left-hand navigation, choose the _Administrator_ perspective at the
+top.
+. In the left-hand navigation, Click _Pipelines_
+. Click _Tasks_
+
+You should see the three tasks that you created:
+
+[NOTE]
+You can also find the tasks from the developer perspective by choosing _Search_
+and then choosing the `Task` resource type, but this way is a little easier.
+
+. Return to the _Developer_ perspective
+. Click _Pipelines_
+
+You should see the pipeline you created:
+
+Click on the pipeline, and you will see a graphical depiction of the various
+tasks and how they are ordered and their dependencies:
+
+## Run the Pipeline
+Now you will run the pipeline you created. While you could start the pipeline run by clicking _Actions_ and then _Start_, the pipeline run requires a large number of parameters to be set, and it's easier to do this from the command line.
+
+Go ahead and start the pipeline run with the following command:
+
+[source,bash,role=execute]
+----
+tkn pipeline start build-and-deploy-ms \
+-w name=shared-workspace,volumeClaimTemplateFile=pipelines/pipelinepvc.yaml \
+-p deployment-name-p=eda-producer-ms-ep \
+-p deployment-name-c=eda-consumer-ms-ep \
+-p git-url=%gitea_console%url/%user%/cockroach-kafka-eda.git \
+-p IMAGE-P=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-producer \
+-p IMAGE-C=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-consumer \
+-p KAFKA_BROKER='crdb-cluster-kafka-bootstrap.crdb-kafka.svc.cluster.local:9092' \
+-p KAFKA_GROUP_ID=%user%-groupid \
+-p KAFKA_TOPIC=%user%-topic \
+-p KAFKA_CLIENT_ID=%user%-clientid \
+--use-param-defaults
+----
