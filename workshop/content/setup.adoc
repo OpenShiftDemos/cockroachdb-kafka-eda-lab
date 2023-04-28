@@ -23,7 +23,7 @@ oc project %user%-eda
 
 . Login to the OpenShift web console
 +
-Console URL: %console_url%
+Console URL: %openshift_console_url%
 +
 Login id: %user%
 +
