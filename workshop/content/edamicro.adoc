@@ -26,7 +26,8 @@ Sign in to Gitea clicking the link at the upper-right.
 When you sign in to Gitea, you will see that you already have a repository
 staged for you, called `%user%/cockroach-kafka-eda`. Click into it now.
 
-In preparation to do some light coding and process some Kubernetes/OpenShift manifests, it will be necessary to clone this repository:
+In preparation to do some light coding and process some Kubernetes/OpenShift
+manifests, it will be necessary to clone this repository:
 
 [source,bash,role=execute]
 ----
@@ -37,7 +38,10 @@ oc project %user%-eda
 ----
 
 ## OpenShift Pipelines and Pipeline resources
-OpenShift includes a CI/CD solution, OpenShift Pipelines, that is based on the upstream Tekton project. The repository you cloned includes some Pipeline manifests for building your event-driven application source. Please create those resources now:
+OpenShift includes a CI/CD solution, OpenShift Pipelines, that is based on the
+upstream Tekton project. The repository you cloned includes some Pipeline
+manifests for building your event-driven application source. Please create those
+resources now:
 
 [source,bash,role=execute]
 ----
@@ -79,7 +83,10 @@ Click on the pipeline, and you will see a graphical depiction of the various
 tasks and how they are ordered and their dependencies:
 
 ## Run the Pipeline
-Now you will run the pipeline you created. While you could start the pipeline run by clicking _Actions_ and then _Start_, the pipeline run requires a large number of parameters to be set, and it's easier to do this from the command line.
+Now you will run the pipeline you created. While you could start the pipeline
+run by clicking _Actions_ and then _Start_, the pipeline run requires a large
+number of parameters to be set, and it's easier to do this from the command
+line.
 
 Go ahead and start the pipeline run with the following command:
 
@@ -111,12 +118,15 @@ of each of the tasks.
 While you're waiting for the pipeline run to finish, here's an explanation of
 the `tkn` command above:
 
-. Start the `build-and-deploy-ms` pipeline
-. Use some shared storage, name it `shared-workspace`, and use a Kuberentes volume claim based on the YAML to determine the size and other characteristics of the storage
-. The git URL for the source code
-. The names of the producer and consumer resources
-. The output destination for the built images in the OpenShift container image registry
-. Some parameters for the apps to talk to Kafka
+* Start the `build-and-deploy-ms` pipeline
+* Use some shared storage, name it `shared-workspace`, and use a Kuberentes
+volume claim based on the YAML to determine the size and other characteristics
+of the storage
+* The git URL for the source code
+* The names of the producer and consumer resources
+* The output destination for the built images in the OpenShift container image
+registry
+* Some parameters for the apps to talk to Kafka
 
 The entire pipeline run may take six or seven minutes, so, if you're a fast
 reader, now would be a great time to relax your eyes, stand up and stretch, or
@@ -145,7 +155,8 @@ The `--edge` flag tells the command line tool to create a route that uses TLS
 edge termination. This means that TLS encryption stops at the OpenShift router
 (HAProxy) and is then un-encrypted between the router and the pod(s).
 
-The following command will give you more details about one of the routes you just created:
+The following command will give you more details about one of the routes you
+just created:
 
 [source,bash,role=execute]
 ----
@@ -239,22 +250,129 @@ Take a look at the source code for the consumer webpage:
 [source,bash,role=execute]
 ----
 cd ~/cockroach-kafka-eda
-cat consumer/test.html | grep webSocket
+cat consumer/test.html | grep replaceme
 ----
 
 It should be obvious what's wrong:
 
 [source]
 ----
-    //webSocket = new WebSocket("ws://localhost:3000/foo");
     webSocket = new WebSocket("wss://replacemewithconsumerurl/foo");
-    //   webSocket.addEventListener("message", (event) => {
-    webSocket.onmessage = function (message) {
+      fetch('https://replacemewithproducerurl/produce')
 ----
 
 Now, ideally you would be using a dynamic application where the server would
 interpret its environment variables and would determine the endpoint for the
 websocket connection in real time before serving the page to the client.
-
 However, this is a simple single-page HTML "application" so you'll have to
 hard-code the websocket endpoint URL in the HTML file.
+
+First, fix the consumer URL:
+
+[source,bash,role=execute]
+----
+export CONSUMER_HOST=$(oc get route eda-consumer-ms-ep-svc -o jsonpath='{.spec.host}')
+sed -i "s/replacemewithconsumerurl/$CONSUMER_HOST/" ~/cockroach-kafka-eda/consumer/test.html
+----
+
+Then, fix the producer URL:
+
+[source,bash,role=execute]
+----
+export PRODUCER_HOST=$(oc get route eda-producer-ms-ep-svc -o jsonpath='{.spec.host}')
+sed -i "s/replacemewithproducerurl/$PRODUCER_HOST/" ~/cockroach-kafka-eda/consumer/test.html
+----
+
+Check your work:
+
+[source,bash,role=execute]
+----
+grep 'WebSocket|fetch' ~/cockroach-kafka-eda/consumer/test.html
+----
+
+You should see something like:
+
+[source]
+----
+    //webSocket = new WebSocket("ws://localhost:3000/foo");
+    webSocket = new WebSocket("wss://eda-consumer-ms-ep-svc-user1-eda.apps.cluster-rr4l2.rr4l2.sandbox1899.opentlc.com/foo");
+      fetch('https://eda-producer-ms-ep-svc-user1-eda.apps.cluster-rr4l2.rr4l2.sandbox1899.opentlc.com/produce')
+----
+
+If you don't, feel free to use `vi` or `nano` to edit the `test.html` file
+directly to fix things. Don't forget to save.
+
+In order to commit your changes back to the git repo, you'll need to configure
+the terminal's `git` client. The following can be used:
+
+[source,bash,role=execute]
+----
+git config --global user.email "%user%@example.com"
+git config --global user.name "%user%"
+----
+
+Then, commit your changes:
+
+[source,bash,role=execute]
+----
+git commit -am "fixing websocket URLs"
+----
+
+Finally, push your code:
+
+[source,bash,role=execute]
+----
+git push
+----
+
+Your Gitea username is:
+
+[source,role=copy]
+----
+%gitea_user%
+----
+
+And the password is:
+
+[source,role=copy]
+----
+%gitea_password%
+----
+
+Feel free to visit Gitea (using the URL at the beginning of the lab) to see
+your changes. 
+
+Now, you can trigger another pipeline run:
+
+[source,bash,role=execute]
+----
+cd ~/cockroach-kafka-eda
+tkn pipeline start build-and-deploy-ms \
+-w name=shared-workspace,volumeClaimTemplateFile=pipelines/pipelinepvc.yaml \
+-p deployment-name-p=eda-producer-ms-ep \
+-p deployment-name-c=eda-consumer-ms-ep \
+-p git-url=%gitea_console_url%/%user%/cockroach-kafka-eda.git \
+-p IMAGE-P=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-producer \
+-p IMAGE-C=image-registry.openshift-image-registry.svc:5000/%user%-eda/eda-ms-consumer \
+-p KAFKA_BROKER='crdb-cluster-kafka-bootstrap.crdb-kafka.svc.cluster.local:9092' \
+-p KAFKA_GROUP_ID=%user%-groupid \
+-p KAFKA_TOPIC=%user%-topic \
+-p KAFKA_CLIENT_ID=%user%-clientid \
+--use-param-defaults
+----
+
+Return to the OpenShift web console to view the pipeline run's status. Note that
+OpenShift will keep track of previous pipeline runs. This can be a very valuable
+tool for debugging and/or understanding the quality, fragility, and overall
+success of your CI/CD pipelines.
+
+Revisit the consumer application:
+
+[source,bash,role=execute]
+----
+echo "https://$(oc get route eda-consumer-ms-ep-svc -o jsonpath='{.spec.host}')"
+----
+
+You should see the bars change after a few moments, and see no errors in the
+browser console. Hit the "Produce Events" button, and you should see things
+change in the bars.

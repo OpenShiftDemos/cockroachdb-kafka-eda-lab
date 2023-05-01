@@ -25,9 +25,19 @@ oc project %user%-eda
 +
 Console URL: %openshift_console_url%
 +
-Login id: %user%
+* Login:
 +
-Password: %password%
+[source,role=copy]
+----
+%user%
+----
+
+* Password:
++
+[source,role=copy]
+----
+%password%
+----
 
 . Switch to the Developer perspective
 +

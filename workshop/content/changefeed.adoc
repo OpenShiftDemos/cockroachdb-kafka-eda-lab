@@ -169,3 +169,6 @@ _Strawberries_ with a quantity of _6_, you might see:
 ----
 Received message: {"after": {"description": null, "id": "6e154890-764e-449b-b6d0-f57216c908d9", "name": "Strawberries", "quantity": "6"}}
 ----
+
+Press `Ctrl-C` to stop watching the logs if you chose to do so in the terminal
+window.

@@ -7,7 +7,7 @@ modules:
     name: Kafka
     exit_sign: Continue
   changefeed:
-    name: Configuring the Changefeed1
+    name: Configuring the Changefeed
     exit_sign: Continue
   edamicro:
     name: EDA Consumer Microservice
