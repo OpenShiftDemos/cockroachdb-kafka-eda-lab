@@ -50,7 +50,7 @@ image::images/choose-developer-perspective.png[]
 _Project_ at the top-left.
 
 ## Fruit Shop Application
-. Next, you will deploy a pre-built container image for the Spring Boot "Fruit"
+. Next, you will deploy a pre-built container image for the Node.js "Fruit"
 application.
 +
 * Select _+Add_ in the left-hand navigation and then click the _Container Images_
@@ -66,12 +66,13 @@ quay.io/openshiftdemos/cockroach-kafka-eda-fruit-node:latest
 +
 *  Accept all of the other defaults and click the blue _Create_ button at the
 bottom.
-* You will return to the _Topology_ view and see that the pod ends up with a red
-ring around it:
+* You will return to the _Topology_ view and see that the pod comes up. 
+Click the _View Logs_ under the _Pods_ section.
 +
-This is because the Spring application cannot find its database, so it crashes
-on start-up. OpenShift keeps trying to restart the pod endlessly, which is a
-good thing!
+You will see an error message that the env variable _SERVICE_BINDING_ROOT_ is missing.
+This is to be expected because the Node.js application expects a Service Binding to extract 
+the connection details to the database. So let us add the CockroachDB database instance and 
+create a Service Binding to it.
 
 ## CockroachDB Cloud Hosted Database
 . Next, you will add a CockroachDB Cloud Hosted Database
@@ -96,9 +97,9 @@ may see all of the other databases.
 Make sure that you select your own database, and not a different user's database.
 * Click the blue _Add to Topology_ button.
 * Click the blue _Continue_ button.
-. Create a service binding between the Spring Boot Fruit Shop application and
+. Create a service binding between the Node.js Fruit Shop application and
 the database instance.
-* Hover your mouse over the center of the red pod ring. You will notice that a
+* Hover your mouse over the center of the blue pod ring. You will notice that a
 small arrow appears coming out from the ring after a moment.
 * Click and drag the arrow to the dotted-line box around the database.
 * Click the blue _Create_ button to accept the default service binding name.
@@ -109,27 +110,27 @@ injected into the pod. In your case, it is injecting a secret with the details
 of the database connection. If you want to see the low-level implementation of
 this behavior:
 
-* In the _Topology_ view, click on the pod ring for the Spring app
-* In the right-hand tab, click on the pod, which will have a name like `spring-postgresql-demo-664b79b5d6-hv8jx`
+* In the _Topology_ view, click on the pod ring for the Node.js app
+* In the right-hand tab, click on the pod, which will have a name like `cockroach-kafka-eda-fruit-node-664b79b5d6-hv8jx`
 * In the pod details screen, click on the _YAML_ tab
 * Scroll down to the `volumeMounts` section, which will look something like:
 +
 [source,yaml]
 ----
 volumeMounts:
-  - name: spring-postgresql-demo-d-user1-db-a8375c8343-dbsc
-    mountPath: /bindings/spring-postgresql-demo-d-user1-db-a8375c8343-dbsc
+  - name: cockroach-kafka-eda-fruit-node-d-user12-db-5a60b62d6c-dbsc
+    mountPath: /bindings/cockroach-kafka-eda-fruit-node-d-user12-db-5a60b62d6c-dbsc
   - name: kube-api-access-p4pkx
     readOnly: true
     mountPath: /var/run/secrets/kubernetes.io/serviceaccount
 ----
 
-The Spring application knows how to extract the relevant connection details from
+The Node.js application knows how to extract the relevant connection details from
 this mounted secret.
 ====
 
-After creating the service binding, the pod ring should turn blue, indicating
-that the pod is now running (and no longer crashing)
+After creating the service binding, the pod will restart and get to a _running_ state 
+indicated by the blue ring. The pod log will be free of any Service Binding error.
 
 ## Testing
 . Test the Fruit Shop application
