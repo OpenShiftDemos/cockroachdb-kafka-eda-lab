@@ -1,0 +1,14 @@
+apiVersion: dbaas.redhat.com/v1beta1
+kind: CrdbDBaaSInstance
+metadata:
+  name: userX-db
+spec:
+  inventoryRef:
+    name: cockroach-saas-provider
+    namespace: openshift-dbaas-operator
+  provisioningParameters:
+    cloudProvider: AWS
+    name: userX-db
+    plan: SERVERLESS
+    regions: us-east-1
+    spendLimit: '0'
