@@ -315,6 +315,7 @@ Then, commit your changes:
 
 [source,bash,role=execute]
 ----
+git add consumer/test.html
 git commit -am "fixing websocket URLs"
 ----
 
