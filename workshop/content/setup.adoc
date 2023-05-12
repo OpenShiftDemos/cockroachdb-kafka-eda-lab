@@ -134,7 +134,7 @@ indicated by the blue ring. The pod log will be free of any Service Binding erro
 
 ## Testing
 . Test the Fruit Shop application
-* Open Application UI by clicking the route opener (pictured)
+* Open Application UI by clicking the route opener
 * Perform basic tasks like inserts/updates within the application UI. For
   example, add 2 Strawberries.
 . Obtain credentials to connect to CockroachDB Serverless cluster from Service
