@@ -50,19 +50,53 @@ image::images/choose-developer-perspective.png[]
 _Project_ at the top-left.
 
 ## Fruit Shop Application
-. Next, you will deploy a pre-built container image for the Node.js "Fruit"
-application.
+. Next, you will deploy the Node.js "Fruit" application by importing it from Github.
 +
-* Select _+Add_ in the left-hand navigation and then click the _Container Images_
-tile.
+* Select +Add in the left-hand navigation and then click the Import from Git tile.
 +
-* Enter the following image name in the box that says _Image name from external
-registry_.
+* Enter the following Git Repo URL in the text box:
 +
 [source,role=copy]
 ----
-quay.io/openshiftdemos/cockroach-kafka-eda-fruit-node:latest
+https://github.com/RHODA-lab/fruit-app-nodejs-rhsummit/
 ----
++
+*  Scroll down to the text that says Click on the names to access advanced options and click the word Deployment
+*  Add an environment variable called: 
++
+[source,role=copy]
+----
+USERID
+----
++
+*  with the value:
++
+[source,role=copy]
+----
+user1
+----
+
+`%user%-db`.
+
+<Note: The value should correspond to the username, ie: if its user1 then the value should be user1, if its user2 then the value should be user 2, etc> 
+ MAY NEED TO FIX ABOVE UP
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+KEEP BELOW
 +
 *  Accept all of the other defaults and click the blue _Create_ button at the
 bottom.
@@ -82,21 +116,22 @@ Database_ tile.
 +
 * Select _CockroachDB Cloud_ tile and then click the blue _Add to Topology_ button.
 +
-* In the next screen select _+ Create New Database Instance_ on the right-hand side.
-[WARNING]
-Make sure that you choose _+ Create New Database Instance_, otherwise you may
-end up using someone else's database. This OpenShift cluster is configured  with
-a single database provider account for the CockroachDB Cloud, which is why you
-may see all of the other databases.
+* Select the Provider Account called crdb-workshop-provider from the dropdown box
 +
-* In the box that says _Cluster name_, enter `%user%-db`.
-* Scroll to the bottom and click the blue _Create_ button.
-* Click the blue "View Database Instances" button.
-* Click the radio button for your database, `%user%-db`.
-[WARNING]
-Make sure that you select your own database, and not a different user's database.
+* From the list of available database instances select ‘cockroach-db-fruit’
++
 * Click the blue _Add to Topology_ button.
++
 * Click the blue _Continue_ button.
+
+
+
+
+
+
+
+
+
 . Create a service binding between the Node.js Fruit Shop application and
 the database instance.
 * Hover your mouse over the center of the blue pod ring. You will notice that a
@@ -176,7 +211,7 @@ Enter password:
 +
 [source,sql,role=execute]
 ----
-select * from fruit limit 5;
+select * from %user%-db.fruit limit 5;
 ----
 
 * Exit the CockroachDB CLI:
