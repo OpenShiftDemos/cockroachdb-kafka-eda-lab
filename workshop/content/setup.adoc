@@ -73,11 +73,8 @@ USERID
 +
 [source,role=copy]
 ----
-user1
-----
-
 %user%
-
+----
 +
 [NOTE]
 The value should correspond to the username, ie: if its user1 then the value should be user1, if its user2 then the value should be user 2, etc
