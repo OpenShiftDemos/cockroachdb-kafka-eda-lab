@@ -211,7 +211,7 @@ Enter password:
 +
 [source,sql,role=execute]
 ----
-select * from %user%-db.fruit limit 5;
+select * from %user%.fruit limit 5;
 ----
 
 * Exit the CockroachDB CLI:
