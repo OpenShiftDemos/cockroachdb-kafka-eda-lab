@@ -13,4 +13,4 @@ USERNAME=`echo $WORKSHOP_VARS | jq -cr .user`
 echo "Use this password: $COCKROACH_DB_PASSWORD"
 
 cockroach sql --url "postgresql://$COCKROACH_DB_USER@$COCKROACH_DB_HOST:26257/$COCKROACH_DB.defaultdb?sslmode=verify-full" \
--e "CREATE CHANGEFEED FOR TABLE fruitoutbox INTO 'kafka://$KAFKA_ROUTE:443?topic_name=$USERNAME-table-changes&tls_enabled=true&ca_cert=$KAFKA_CERT_BASE64';"
+-e "CREATE CHANGEFEED FOR TABLE $USERNAME.fruitoutbox INTO 'kafka://$KAFKA_ROUTE:443?topic_name=$USERNAME-table-changes&tls_enabled=true&ca_cert=$KAFKA_CERT_BASE64';"
