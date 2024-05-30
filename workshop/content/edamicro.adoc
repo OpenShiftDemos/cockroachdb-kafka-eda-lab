@@ -287,7 +287,7 @@ Check your work:
 
 [source,bash,role=execute]
 ----
-grep 'WebSocket|fetch' ~/cockroach-kafka-eda/consumer/test.html
+cat ~/cockroach-kafka-eda/consumer/test.html
 ----
 
 You should see something like:
