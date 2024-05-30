@@ -96,7 +96,7 @@ Database_ tile.
 +
 * Select the Provider Account called crdb-workshop-provider from the dropdown box
 +
-* From the list of available database instances select ‘cockroach-db-fruit’
+* From the list of available database instances select ‘cockroach-db-fruit’. If there is a sequence of numbers after the instance name please head back to your workshop credentials page and find the GUID that matches your instance name for example 55fb5 would be 'cockroach-db-fruit-55fb5'
 +
 * Click the blue _Add to Topology_ button.
 +
